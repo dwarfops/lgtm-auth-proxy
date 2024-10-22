@@ -1,0 +1,67 @@
+name: "Release"
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  ECR_REGISTRY: "public.ecr.aws/l6l5o3s2"
+
+jobs:
+  release:
+    name: Release
+    environment: production
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # to be able to publish a GitHub release
+      issues: write # to be able to comment on released issues
+      pull-requests: write # to be able to comment on released pull requests
+      id-token: write # to enable use of OIDC
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "lts/*"
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release -b main -p @semantic-release/commit-analyzer -p @semantic-release/release-notes-generator -p @semantic-release/github -t '${version}'
+      - name: Git checkout # For new tag
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Extract Git Tag
+        run: echo "GIT_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::467698300896:role/github
+          aws-region: us-east-1
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
+      - name: Build and push image
+        uses: docker/build-push-action@v4
+        with:
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ env.ECR_REGISTRY }}/lgtm-auth-proxy:${{ env.GIT_TAG }}
+      - name: Publish Helm Chart
+        run : |
+          helm package charts/lgtm-auth-proxy \
+            --app-version ${{ env.GIT_TAG }} \
+            --version ${{ env.GIT_TAG }}
+          helm push "lgtm-auth-proxy-${{ env.GIT_TAG }}.tgz" oci://${{ env.ECR_REGISTRY }}/helm
+        shell: bash

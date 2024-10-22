@@ -1,0 +1,10 @@
+apiVersion: v2
+name: lgtm-auth-proxy
+description: LGTM Auth Proxy is a robust, configurable reverse proxy designed to authenticate and route requests to various backend services which utilize the X-Tenant-ID header. It's specifically built for securing and managing access to Mimir, Loki, and Tempo.
+type: application
+version: 0.0.0
+appVersion: "0.0.0"
+home: https://dwarfops.com/
+icon: https://dwarfops.com/favicon.690305d7.ico
+sources:
+  - https://github.com/dwarfops/lgtm-auth-proxy/

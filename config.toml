@@ -1,0 +1,24 @@
+###
+# Default config file, may override using environment variables or re-writing this file at /etc/lgtm-auth-proxy/config.toml
+###
+
+backend_type = "secretsmanager"
+log_level = "info"
+
+[secretsmanager]
+secret_id = "testing"
+refresh_interval = "1m"
+# If secret has not been updated in this time, it will be considered stale and /ready will return 503.
+stale_threshold = "15m"
+
+[proxy]
+listen = ":8000"
+
+# [[proxy.upstreams]]
+# match = "loki\\.my\\.public\\.host\\.com"
+# upstream = "http://loki-gw.svc.local"
+# priority = 100
+
+# [[proxy.upstreams]]
+# match = ".*"
+# upstream = "http://mimir-gw.svc.local"

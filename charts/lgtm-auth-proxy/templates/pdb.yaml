@@ -1,0 +1,20 @@
+{{- if $.Values.pdb.enabled -}}
+{{- if and $.Values.pdb.minAvailable $.Values.pdb.maxUnavailable }}
+  {{ fail "Cannot specify both pdb.minAvailable and pdb.maxUnavailable" }}
+{{- end }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "lgtm-auth-proxy.fullname" $ }}
+spec:
+{{- with $.Values.pdb.maxUnavailable }}
+  maxUnavailable: {{ . }}
+{{- end }}
+{{- with $.Values.pdb.minAvailable }}
+  minAvailable: {{ . }}
+{{- end }}
+  selector:
+    matchLabels:
+      {{- include "lgtm-auth-proxy.selectorLabels" $ | nindent 6 }}
+{{- end -}}
